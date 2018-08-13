@@ -31,7 +31,7 @@ namespace Eth3r
         public bool IsAdministrator;
         public static StringBuilder output = new StringBuilder();
         public static Process process;
-        public string sn0Path;
+        public static string sn0Path;
         public string updateRamdisk;
 
         public GenerateFirmware()
@@ -57,7 +57,7 @@ namespace Eth3r
           // https://stackoverflow.com/questions/5519328/executing-batch-file-in-c-sharp
 
         string instDir = @"c:/Eth3r";
-        static void LineChanger(string newText, string fileName, int line_to_edit)
+        static void lineChanger(string newText, string fileName, int line_to_edit)
         {
             string[] arrLine = File.ReadAllLines(fileName);
             arrLine[line_to_edit - 1] = newText;
@@ -73,6 +73,7 @@ namespace Eth3r
             openFileDialog1.Title = "Select your Sn0wbreeze IPSW";
             DialogResult dialogSelection = openFileDialog1.ShowDialog();
             sn0Path = openFileDialog1.FileName;
+                label8.Text = sn0Path; //make textbox with name of IPSW so user knows they selected an IPSW
         }
 
         public void button3_Click(object sender, EventArgs e)
@@ -83,7 +84,7 @@ namespace Eth3r
             openFileDialog2.Title = "Select your Stock IPSW";
             DialogResult dialogSelection = openFileDialog2.ShowDialog();
             stockPath = openFileDialog2.FileName;
-            //MessageBox.Show(stockPath);
+            label9.Text = stockPath; //make textbox with name of IPSW so user knows they selected an IPSW
         }
 
         public void button2_Click(object sender, EventArgs e)
@@ -199,14 +200,12 @@ namespace Eth3r
             {
                 //we are good to go, so let's generate the ipsw, shall we?
 
-                LineChanger("\"AWAY_LOCK_LABEL\" = \"" + CustomSlide + "\";", instDir + "/SpringBoard.strings", 1);
-                LineChanger("\"AWAY_LOCK_BUDDY_LABEL\" = \"" + CustomSlide + "\";" , instDir + "/SpringBoard.strings", 5);
+                lineChanger("\"AWAY_LOCK_LABEL\" = \"" + CustomSlide + "\";", instDir + "/SpringBoard.strings", 1);
+                lineChanger("\"AWAY_LOCK_BUDDY_LABEL\" = \"" + CustomSlide + "\";" , instDir + "/SpringBoard.strings", 5);
                     
 
 
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Beginning IPSW generation...";
-                richTextBox1.Text += Environment.NewLine;
+                label10.Text = "Beginning IPSW generation...";
 
                 //first we are going to create our temp path, then define the commands.
                 string temp = @"c:\EthTemp";
@@ -219,7 +218,7 @@ namespace Eth3r
                     string extract = "7za.exe x -oIPSW " + "\"" + stockPath + "\"";
                     string prepRootFS = "cd IPSW && rename " + rootfs + " rootfs.dmg";
                     string decrypt = "dmg.exe extract \"IPSW/rootfs.dmg\" \"IPSW/decrootfs.dmg\" -k " + rootfskey;
-                    string resizeRootFS = "hfsplus.exe \"IPSW/decrootfs.dmg\" grow 1920783616";
+                    string resizeRootFS = "hfsplus.exe \"IPSW/decrootfs.dmg\" grow 1620783616";
                     string rebuildRootFilesystem = "dmg.exe build \"IPSW/decrootfs.dmg\" \"IPSW/" + rootfs + "\"";
                     string extractSn0wbreezeIPSW = "7za.exe x -oSN0 " + "\"" + sn0Path + "\"";
                     //string removeSn0wbreezeRootFS = "cd SN0 && del " + rootfs;
@@ -245,17 +244,20 @@ namespace Eth3r
                         Directory.Delete(getrid, true);
                     }
                 //MessageBox.Show(extract + Environment.NewLine + prepRootFS + Environment.NewLine + decrypt + Environment.NewLine + rebuildRootFilesystem + Environment.NewLine + extractSn0wbreezeIPSW + Environment.NewLine + removeSn0wbreezeRootFS + Environment.NewLine + copyEth3rDMG + Environment.NewLine + deleteUnrequiredFiles + Environment.NewLine + move7zip + Environment.NewLine + createIPSW + Environment.NewLine + moveTheFinalProduct + Environment.NewLine + cleanUpCleanUpEverybodyEverywhereCleanUpCleanUpEverybodyDoYourShare + Environment.NewLine);
-                richTextBox1.Text += "extracting IPSW";
+                label10.Text = "extracting IPSW";
+                    progressBar1.Value = 8;
                     ExecuteCommand(extract);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Preparing RootFS";
+                label10.Text = null;
+                label10.Text = "Preparing RootFS";
                     ExecuteCommand(prepRootFS);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Decrypting RootFS (may take a while)";
+                progressBar1.Value = 10;
+                label10.Text = null;
+                label10.Text = "Decrypting RootFS (may take a while)";
                     ExecuteCommand(decrypt);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Resizing RootFS";
+                progressBar1.Value = 20;
+                label10.Text = "Resizing RootFS";
                     ExecuteCommand(resizeRootFS);
+                    progressBar1.Value = 23;
 
                 if (checkBox1.Checked) //check if the user wants jailbreak or not
                 {
@@ -263,13 +265,11 @@ namespace Eth3r
                     {
                         if (iosversion == "6.1.3")
                         {
-                            richTextBox1.Text += Environment.NewLine;
-                            richTextBox1.Text += "Installing Cydia";
+                            label10.Text = "Installing Cydia";
                             string instCydia = "hfsplus.exe \"IPSW/decrootfs.dmg\" untar \"Cydia.tar\" \"/\"";
                             string jailbreakTheOS = "hfsplus.exe \"IPSW/decrootfs.dmg\" untar \"p0sixspwn.tar\" \"/\"";
                             ExecuteCommand(instCydia);
-                            richTextBox1.Text += Environment.NewLine;
-                            richTextBox1.Text += "Jailbreaking";
+                            label10.Text = "Jailbreaking";
                             ExecuteCommand(jailbreakTheOS);
                         }
                     }
@@ -281,9 +281,10 @@ namespace Eth3r
                     {
                         if (iosversion == "6.1.3")
                         {
-                            string instDir = "\"c:/Program Files (x86)/Eth3r\"";
-                            richTextBox1.Text += Environment.NewLine;
-                            richTextBox1.Text += "Changing 'slide to unlock' to " + "\""+ CustomSlide + "\"";
+                            string instDir = "c:/Eth3r";
+                            label10.Text = "Changing 'slide to unlock' to " + "\""+ CustomSlide + "\"";
+                            lineChanger("\"AWAY_LOCK_LABEL\" = \"" + CustomSlide + "\";", instDir + "/SpringBoard.strings", 1);
+                            lineChanger("\"AWAY_LOCK_BUDDY_LABEL\" = \"" + CustomSlide + "\";", instDir + "/SpringBoard.strings", 5);
                             string changeSlide = "hfsplus \"IPSW/decrootfs.dmg\" rm \"System/Library/CoreServices/SpringBoard.app/English.lproj/SpringBoard.strings\" &&   hfsplus \"IPSW/decrootfs.dmg\" add " + instDir + "/SpringBoard.strings \"System/Library/CoreServices/SpringBoard.app/English.lproj/SpringBoard.strings\"";
                             ExecuteCommand(changeSlide);
                         }
@@ -296,8 +297,7 @@ namespace Eth3r
                     {
                         if (iosversion == "6.1.3")
                         {
-                            richTextBox1.Text += Environment.NewLine;
-                            richTextBox1.Text += "Removing Setup.app";
+                            label10.Text = "Removing Setup.app";
                             string removeSetupApp = "hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/Setup\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/PkgInfo\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/warranty.plist\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/Info.plist\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/CountryAlias.plist\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/_CodeSignature/CodeResources\" && hfsplus \"IPSW/decrootfs.dmg\" rm \"Applications/Setup.app/LanguagesByCountry.plist\"";
                             ExecuteCommand(removeSetupApp);
                         }
@@ -306,40 +306,36 @@ namespace Eth3r
 
 
                             //now run all these commands
-                            richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Rebuilding Root Filesystem";
+                label10.Text = "Rebuilding Root Filesystem";
                     ExecuteCommand(rebuildRootFilesystem);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Extracting Sn0wbreeze IPSW";
+                progressBar1.Value = 35;
+                label10.Text = "Extracting Sn0wbreeze IPSW";
                     ExecuteCommand(extractSn0wbreezeIPSW);
-                richTextBox1.Text += Environment.NewLine;
-
-                richTextBox1.Text += "Preparing to insert Eth3r DMG";
+                    progressBar1.Value = 43;
+                label10.Text = "Preparing to insert Eth3r DMG";
                 File.Delete(home + "/SN0/" + rootfs);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Inserting Eth3r DMG";
+                progressBar1.Value = 45;
+                label10.Text = "Inserting Eth3r DMG";
                     string oldLocation = home + "/IPSW/" + rootfs;
                     string newLocation = home + "/SN0/" + rootfs;
                     File.Copy(oldLocation, newLocation);
-                    //ExecuteCommand(copyEth3rDMG);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Removing unrequired Files";
+                    progressBar1.Value = 55;
+                label10.Text = "Removing unrequired Files";
                     ExecuteCommand(deleteUnrequiredFiles);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Moving Files";
+                    progressBar1.Value = 60;
+                label10.Text = "Moving Files";
                     ExecuteCommand(move7zip);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Creating IPSW";
+                    progressBar1.Value = 65;
+                label10.Text = "Creating IPSW";
                     ExecuteCommand(createIPSW);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Moing the final product";
+                    progressBar1.Value = 80;
+                label10.Text = "Moing the final product";
                     ExecuteCommand(moveTheFinalProduct);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Cleaning Up";
+                label10.Text = "Cleaning Up";
+                    progressBar1.Value = 90;
                     ExecuteCommand(cleanUpCleanUpEverybodyEverywhereCleanUpCleanUpEverybodyDoYourShare);
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += Environment.NewLine;
-                richTextBox1.Text += "Your IPSW has been generated and placed on your Desktop. Thank you for using Eth3r by TKO-Cuber";
+                    progressBar1.Value = 100;
+                label10.Text = "Done. The IPSW is on your Desktop.";
             }
 
         }
